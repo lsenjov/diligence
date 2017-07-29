@@ -9,6 +9,7 @@
                  [compojure "1.6.0"]
                  [conman "0.6.7"]
                  [cprop "0.1.10"]
+                 [e85th/gaia "0.1.0"]
                  [funcool/struct "1.0.0"]
                  [luminus-immutant "0.2.3"]
                  [luminus-migrations "0.3.9"]

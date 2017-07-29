@@ -114,6 +114,39 @@
       ]
      ]
     ))
+(defn find-nearest-station-component []
+  (let [text-atom (r/atom "")
+        response-atom (r/atom nil)
+        ]
+    (fn []
+      [:div
+       (if @response-atom
+         (str "Your nearest police station is: " @response-atom))
+       [:input.form-control
+        {:type "text"
+         :on-change #(reset! text-atom (-> % .-target .-value))
+         :value @text-atom
+         :label "Your Location"}]
+       [:div.btn.btn-default
+        {:onClick (fn []
+                    (GET "/api/edn/get-nearest-police"
+                         {:params {:loc @text-atom}
+                          ;:response-format (ajax/transit-response-format)
+                          :handler #(let [ret (cljs.reader/read-string %)]
+                                      (println "Query return: " (pr-str ))
+                                      (reset! response-atom ret))
+                          })
+                    (reset! text-atom ""))
+         }
+        "Find Nearest Station"]
+       ])))
+(defn report-component []
+    [:div.col-lg-4
+     [:div.panel.panel-default
+      [:div.panel-heading "Report a Crime"]
+      [:div.panel-body "Links here."
+       [find-nearest-station-component]
+       ]]])
 
 (defn nav-link [uri title page collapsed?]
   [:li.nav-item
@@ -158,8 +191,9 @@
      ]
     ]
    [search-component]
-   [banned-person-component]
+   [report-component]
    [whois-component]
+   [banned-person-component]
    [:div.col-lg-4 (pr-str (get-in @app-state [:people (:selected @app-state)]))]])])
 
 (def pages
