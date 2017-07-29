@@ -1,9 +1,22 @@
-CREATE TABLE users
-(id VARCHAR(20) PRIMARY KEY,
- first_name VARCHAR(30),
- last_name VARCHAR(30),
- email VARCHAR(30),
- admin BOOLEAN,
- last_login TIME,
- is_active BOOLEAN,
- pass VARCHAR(300));
+--  CREATE TABLE users
+--  (id VARCHAR(20) PRIMARY KEY,
+--   first_name VARCHAR(30),
+--   last_name VARCHAR(30),
+--   email VARCHAR(30),
+--   admin BOOLEAN,
+--   last_login TIME,
+--   is_active BOOLEAN,
+--   pass VARCHAR(300));
+
+CREATE TABLE banned_person (
+REGISTER_NAME TEXT,
+BD_PER_NAME TEXT,
+BD_PER_TYPE TEXT,
+BD_PER_DOC_NUM TEXT,
+BD_PER_START_DT TEXT,
+BD_PER_END_DT TEXT,
+BD_PER_ADD_LOCAL TEXT,
+BD_PER_ADD_STATE TEXT,
+BD_PER_ADD_PCODE TEXT,
+BD_PER_ADD_COUNTRY TEXT,
+BD_PER_COMMENTS TEXT);

@@ -24,7 +24,15 @@
         :handler #(let [ret (cljs.reader/read-string %)]
                     (println "Query return: " (pr-str ))
                     (swap! app-state assoc-in [:people id :banned-person] ret))
-        }))
+        })
+  (GET "/api/edn/get-whois"
+       {:params {:url website}
+        ;:response-format (ajax/transit-response-format)
+        :handler #(let [ret (cljs.reader/read-string %)]
+                    (println "Query return: " (pr-str ))
+                    (swap! app-state assoc-in [:people id :whois] ret))
+        })
+       )
 
 (defn search-component
   []
@@ -57,11 +65,27 @@
         "Search"]
        ])))
 
+(defn whois-component
+  []
+  (if-let [res (get-in @app-state [:people (:selected @app-state) :whois])]
+    [:div.col-lg-4
+     [:div.panel.panel-default
+      [:div.panel-heading "Whois Information"]]
+      [:div.panel-body
+       [:table.table.table-striped.table-hover>tbody
+        [:tr>td "Registrar name: " (get-in res ["registrar" "name"])]
+        [:tr>td "Registrar organisation: " (get-in res ["registrar" "name"])]
+        [:tr>td "Created on: " (get-in res ["created_on"])]
+        [:tr>td "Updated on: " (get-in res ["updated_on"])]
+        ]
+       ]
+     ]
+    ))
 (defn banned-person-component
   []
   (if-let [res (get-in @app-state [:people (:selected @app-state) :banned-person])]
     ;; A record was returned
-    [:div.col-lg-4
+    [:div.col-lg-8
      [:div.panel.panel-default
       [:div.panel-heading "ASIC Banned List:"]
       [:div.panel-body
@@ -135,7 +159,8 @@
     ]
    [search-component]
    [banned-person-component]
-   (pr-str @app-state)])])
+   [whois-component]
+   [:div.col-lg-4 (pr-str (get-in @app-state [:people (:selected @app-state)]))]])])
 
 (def pages
   {:home #'home-page

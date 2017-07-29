@@ -4,6 +4,7 @@
             [ring.util.http-response :as response]
             [clojure.java.io :as io]
             [diligence.db.core :as db]
+            [clj-json.core :as json]
             ))
 
 (defn home-page []
@@ -12,6 +13,21 @@
 (defn wrap-mysql-wildcards
   [s]
   (str \% s \%))
+
+(defn whois-call
+  [url]
+  (let [res (-> "http://whoiz.herokuapp.com/lookup.json"
+                (str "?url=" url)
+                slurp
+                json/parse-string
+                (dissoc "disclaimer")
+                )]
+    (println "Whois call response: " (pr-str res))
+    res)
+  )
+(comment
+  (whois-call "yahoo.com")
+  )
 
 (defroutes home-routes
   (GET "/" []
@@ -25,5 +41,7 @@
                        (update-in [:first-name] wrap-mysql-wildcards)
                        (update-in [:last-name] wrap-mysql-wildcards)
                        db/select-persons))))
+  (GET "/api/edn/get-whois" {{:keys [url]} :params}
+       (pr-str (whois-call url)))
   )
 
