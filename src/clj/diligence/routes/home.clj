@@ -6,6 +6,7 @@
             [diligence.db.core :as db]
             [clj-json.core :as json]
             [clojure.xml :as xml]
+            [net.cgrand.enlive-html :as el-html]
             [e85th.gaia.core :as gaia]
             ))
 
@@ -35,6 +36,66 @@
                 xml/parse
                 )]
     res))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Searching Quatloos
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn- transform-quatloos-post
+  [p]
+  (let [post
+        (->> p
+             (remove string?)
+             first :content
+             (filter (comp #{"postbody"} :class :attrs))
+             first :content
+             rest first :content
+             first
+             )]
+    ;; We have the post, now to construct the header and the message
+    (as-> post v
+      {:href (-> v :attrs :href
+                 (.substring 2)
+                 (->> (str "http://quatloos.com/Q-Forum/")))
+       :content (->> v :content
+                     (map (fn [q]
+                            (if (string? q)
+                              q
+                              (->> q :content (apply str)))))
+                     (apply str)
+                     )})))
+(defn- transform-quatloos-site
+  [ts]
+  (let [data (-> ts rest first :content (nth 3) :content (nth 1) :content (nth 7) :content rest)
+        heading (-> data first :content first)
+        body (->> data
+                  ;; Remove strings
+                  (filter map?)
+                  ;; Find search results
+                  (filter (comp #{"search post bg1" "search post bg2"} :class :attrs))
+                  (map :content)
+                  ;; At this point, we have the 5 search posts
+                  (map transform-quatloos-post)
+                  )
+        ]
+    {:heading heading
+     :body body}
+    ))
+(defn search-quatloos
+  [s]
+  (-> s
+      (.replaceAll "\\s+" "+")
+      (->> (str "http://quatloos.com/Q-Forum/search.php?keywords="))
+      (java.net.URL.)
+      el-html/html-resource
+      transform-quatloos-site
+      )
+  )
+(comment
+  (transform-quatloos-site ts)
+  (def ts (el-html/html-resource (java.net.URL. "http://quatloos.com/Q-Forum/search.php?keywords=john+lipton")))
+  (.replaceAll "John Lipton" "\\s+" "+")
+  (search-quatloos "John Lipton")
+(el-html/html-resource "http://quatloos.com/Q-Forum/search.php?keywords=john+lipton" (java.net.URL. (.replaceAll s "\\s+" "+")))
+  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Finding nearest police station
@@ -101,5 +162,7 @@
        (pr-str (whois-call url)))
   (GET "/api/edn/get-nearest-police" {{:keys [loc]} :params}
        (pr-str (get-closest-station loc)))
+  (GET "/api/edn/search-quatloos" {{:keys [search]} :params}
+       (pr-str (search-quatloos search)))
   )
 

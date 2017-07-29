@@ -20,19 +20,22 @@
   (println "Getting data on person. Id: " id " request: " (pr-str request))
   (GET "/api/edn/get-banned"
        {:params request
-        ;:response-format (ajax/transit-response-format)
         :handler #(let [ret (cljs.reader/read-string %)]
-                    (println "Query return: " (pr-str ))
+                    (println "Get-banned return: " (pr-str %))
                     (swap! app-state assoc-in [:people id :banned-person] ret))
         })
   (GET "/api/edn/get-whois"
        {:params {:url website}
-        ;:response-format (ajax/transit-response-format)
         :handler #(let [ret (cljs.reader/read-string %)]
-                    (println "Query return: " (pr-str ))
+                    (println "Whois return: " (pr-str %))
                     (swap! app-state assoc-in [:people id :whois] ret))
         })
-       )
+  (GET "/api/edn/search-quatloos"
+       {:params {:search (str first-name \+ last-name)}
+        :handler #(let [ret (cljs.reader/read-string %)]
+                    (println "Quatloos return: " (pr-str %))
+                    (swap! app-state assoc-in [:people id :quatloos] ret))
+       }))
 
 (defn search-component
   []
@@ -58,8 +61,10 @@
                      (->
                        (swap! app-state
                               (comp
+                                (fn [a] (assoc-in a [:selected] (:last-selection a)))
                                 (fn [a] (assoc-in a [:people (:last-selection a)] request))
-                                (fn [a] (update-in a [:last-selection] inc))))
+                                (fn [a] (update-in a [:last-selection] inc))
+                                ))
                        :last-selection
                        (get-data-on-person request)))}
         "Search"]
@@ -147,6 +152,20 @@
       [:div.panel-body "Links here."
        [find-nearest-station-component]
        ]]])
+(defn quatloos-component []
+  (if-let [res (get-in @app-state [:people (:selected @app-state) :quatloos])]
+    [:div.col-lg-4
+     [:div.panel.panel-default
+      [:div.panel-heading "Quatloos Results"]]
+      [:div.panel-body
+       [:h4 (:heading res)]
+       [:table.table.table-striped.table-hover>tbody
+        (doall (map (fn [{:keys [href content]}]
+                      ^{:key href}
+                      [:a {:href href :target "_blank"}
+                       [:tr>td
+                        content]])
+                    (:body res)))]]]))
 
 (defn nav-link [uri title page collapsed?]
   [:li.nav-item
@@ -194,7 +213,9 @@
    [report-component]
    [whois-component]
    [banned-person-component]
-   [:div.col-lg-4 (pr-str (get-in @app-state [:people (:selected @app-state)]))]])])
+   [quatloos-component]
+   ;[:div.col-lg-4 (pr-str (get-in @app-state [:people (:selected @app-state)]))]
+   ])])
 
 (def pages
   {:home #'home-page
