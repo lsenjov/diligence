@@ -3,3 +3,4 @@
 SELECT * FROM banned_person
 WHERE (BD_PER_NAME LIKE :first-name)
 AND (BD_PER_NAME LIKE :last-name)
+LIMIT 5

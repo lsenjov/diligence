@@ -15,27 +15,34 @@
                             :last-selection 0
                             }))
 
+(defn- is-pos-string?
+  [s]
+  (and (string? s) ((comp pos? count) s))
+  )
 (defn get-data-on-person
   [id {:keys [first-name last-name website] :as request}]
   (println "Getting data on person. Id: " id " request: " (pr-str request))
-  (GET "/api/edn/get-banned"
-       {:params request
-        :handler #(let [ret (cljs.reader/read-string %)]
-                    (println "Get-banned return: " (pr-str %))
-                    (swap! app-state assoc-in [:people id :banned-person] ret))
-        })
-  (GET "/api/edn/get-whois"
-       {:params {:url website}
-        :handler #(let [ret (cljs.reader/read-string %)]
-                    (println "Whois return: " (pr-str %))
-                    (swap! app-state assoc-in [:people id :whois] ret))
-        })
-  (GET "/api/edn/search-quatloos"
-       {:params {:search (str first-name \+ last-name)}
-        :handler #(let [ret (cljs.reader/read-string %)]
-                    (println "Quatloos return: " (pr-str %))
-                    (swap! app-state assoc-in [:people id :quatloos] ret))
-       }))
+  (if (and (is-pos-string? first-name) (is-pos-string? last-name))
+    (do
+      (GET "/api/edn/get-banned"
+           {:params request
+            :handler #(let [ret (cljs.reader/read-string %)]
+                        (println "Get-banned return: " (pr-str %))
+                        (swap! app-state assoc-in [:people id :banned-person] ret))
+            })
+      (GET "/api/edn/search-quatloos"
+           {:params {:search (str first-name \+ last-name)}
+            :handler #(let [ret (cljs.reader/read-string %)]
+                        (println "Quatloos return: " (pr-str %))
+                        (swap! app-state assoc-in [:people id :quatloos] ret))
+            })))
+  (if (is-pos-string? website)
+    (GET "/api/edn/get-whois"
+         {:params {:url website}
+          :handler #(let [ret (cljs.reader/read-string %)]
+                      (println "Whois return: " (pr-str %))
+                      (swap! app-state assoc-in [:people id :whois] ret))
+          })))
 
 (defn search-component
   []
@@ -50,25 +57,28 @@
                                    :value (get @query-atom kw)
                                    :label s}]])]
     (fn []
-      [:div.col-lg-4
-       [:form.form-horizontal
-        (doall (map item-component
-                    [:first-name :last-name :website]
-                    ["First name" "Last name" "Website"]))]
-       [:div.btn.btn-default
-        {:onClick #(let [request @query-atom]
-                     (reset! query-atom {})
-                     (->
-                       (swap! app-state
-                              (comp
-                                (fn [a] (assoc-in a [:selected] (:last-selection a)))
-                                (fn [a] (assoc-in a [:people (:last-selection a)] request))
-                                (fn [a] (update-in a [:last-selection] inc))
-                                ))
-                       :last-selection
-                       (get-data-on-person request)))}
-        "Search"]
-       ])))
+      [:div.col-lg-8
+       [:div.panel.panel-default
+        [:div.panel-heading "Search for People"]
+        [:div.panel-body
+         [:form.form-horizontal
+          (doall (map item-component
+                      [:first-name :last-name :website]
+                      ["First name" "Last name" "Website"]))]
+         [:div.btn.btn-default
+          {:onClick #(let [request @query-atom]
+                       (reset! query-atom {})
+                       (->
+                         (swap! app-state
+                                (comp
+                                  (fn [a] (assoc-in a [:selected] (:last-selection a)))
+                                  (fn [a] (assoc-in a [:people (:last-selection a)] request))
+                                  (fn [a] (update-in a [:last-selection] inc))
+                                  ))
+                         :last-selection
+                         (get-data-on-person request)))}
+          "Search"]
+         ]]])))
 
 (defn whois-component
   []
@@ -158,6 +168,7 @@
      [:div.panel.panel-default
       [:div.panel-heading "Quatloos Results"]]
       [:div.panel-body
+       "Please note that this searches for articles with both names, and the names may not be together. Multiple matches may appear in a single source. Please check the sources before making a decision."
        [:h4 (:heading res)]
        [:table.table.table-striped.table-hover>tbody
         (doall (map (fn [{:keys [href content]}]
@@ -182,7 +193,7 @@
         {:on-click #(swap! collapsed? not)} "☰"]
        [:div.collapse.navbar-toggleable-xs
         (when-not @collapsed? {:class "in"})
-        [:a.navbar-brand {:href "#/"} "diligence"]
+        [:a.navbar-brand {:href "#/"} "dontgetscammed.space"]
         [:ul.nav.navbar-nav
          [nav-link "#/" "Home" :home collapsed?]
          [nav-link "#/about" "About" :about collapsed?]]]])))
@@ -191,7 +202,10 @@
   [:div.container
    [:div.row
     [:div.col-md-12
-     [:img {:src (str js/context "/img/warning_clojure.png")}]]]])
+     [:p "This is the Don't Get Scammed Space, giving assistance with investigating scammers and performing your due diligence."]
+     [:p "Please note this is not meant to be a replacement for due diligence, just shortcuts to investigation steps."]
+     ;[:img {:src (str js/context "/img/warning_clojure.png")}]
+     ]]])
 
 (defn home-page []
   [:div.container
