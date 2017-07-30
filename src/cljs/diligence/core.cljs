@@ -1,6 +1,7 @@
 (ns diligence.core
   (:require [reagent.core :as r]
             [reagent.session :as session]
+            [cljs.reader]
             [secretary.core :as secretary :include-macros true]
             [goog.events :as events]
             [goog.history.EventType :as HistoryEventType]
